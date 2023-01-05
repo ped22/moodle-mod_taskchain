@@ -468,7 +468,7 @@ function modify_taskchain_links() {
                 indentWidth += (parseInt(links[ii].style.marginLeft) || 0);
                 links[ii].style.marginLeft = indentWidth + 'px';
             }
-            if (isediting==false) {
+            if (false) {
 
                 // get width, w, of widest ancestor
                 var w = 0;
