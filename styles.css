@@ -784,9 +784,6 @@ body.path-course-view div.taskchainrecentactivity ul { font-size: 0.8em; margin:
  *  TaskChain grade styles
  *  (see mod/taskchain/courselinks.js.php)
  */
-.path-course-view .activity a.taskchaingrade {
-    width: 100%;
-}
 
 .path-course-view .activity div.taskchainhighgrade,
 .path-course-view .activity div.taskchainmediumgrade,
