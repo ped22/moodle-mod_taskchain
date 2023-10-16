@@ -401,7 +401,8 @@ if (print_courselinks()) {
                 div.appendChild(document.createTextNode(grade));
                 a.insertBefore(div, a.firstChild);
                 a.classList.add("d-block", "taskchaingrade");
-                if (TC.displayasblock) {
+                //if (TC.displayasblock) {
+                if (false) {
                     if (TC.gradelinecolor || TC.gradelinestyle) {
                         a.style.setProperty("border-bottom-width", "2px");
                     }
