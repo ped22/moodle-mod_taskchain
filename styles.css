@@ -857,3 +857,7 @@ body.path-course-view div.taskchainrecentactivity ul { font-size: 0.8em; margin:
 	background-color: #ccc; /* darker grey */
 	color: #000;
 }
+
+#page-header {
+    display: none;
+}
