@@ -50,7 +50,6 @@ body.path-course-view div.taskchainrecentactivity ul { font-size: 0.8em; margin:
 #page-mod-taskchain-attempt div.taskchainstopbutton .FuncButtonDown { margin-right: 18px; }
 #page-mod-taskchain-attempt input,
 #page-mod-taskchain-attempt textarea { width: auto; }
-#page-mod-taskchain-attempt #page-header { display: none; }
 
 /** mod taskchain submit **/
 #page-mod-taskchain-submit .region-content { text-align: center; }

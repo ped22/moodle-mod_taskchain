@@ -12,6 +12,10 @@
 	display: none;
 }
 
+#page-header {
+	display:none;
+}
+
 body{
 	font-family: [strFontFace];
 [inclPageBGColor]	background-color: [strPageBGColor];[/inclPageBGColor]
