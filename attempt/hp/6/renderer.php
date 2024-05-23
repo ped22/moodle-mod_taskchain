@@ -707,7 +707,7 @@ class mod_taskchain_attempt_hp_6_renderer extends mod_taskchain_attempt_hp_rende
 
         // fix "top" setting to position FeedbackDiv
         if ($this->usemoodletheme) {
-            $canvas = "document.getElementById('$this->themecontainer')"; // moodle
+            $canvas = "document.getElementById('MainDiv')"; // moodle
         } else {
             $canvas = "document.getElementsByTagName('body')[0]"; // original
         }
