@@ -49,7 +49,7 @@
 
 </head>
 
-<body onload="StartUp()">
+<body onload="TimerStartUp()" id="TheBody" [inclScorm1.2]onunload="CheckLMSFinish()"[/inclScorm1.2]>
 
 <!-- BeginTopNavButtons -->
 
