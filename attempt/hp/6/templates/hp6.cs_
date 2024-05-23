@@ -12,11 +12,11 @@
 	display: none;
 }
 
-* #page-header {
+* html #page-header {
 	display:none;
 }
 
-* .activity-header {
+* html .activity-header {
 	display:none;
 }
 
