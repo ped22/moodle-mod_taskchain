@@ -10,7 +10,7 @@ function ShowMessage(Feedback){
 	var FDiv = document.getElementById('FeedbackDiv');
 	topZ++;
 	FDiv.style.zIndex = topZ;
-	FDiv.style.top = TopSettingWithScrollOffset(50) + 'px';
+	FDiv.style.top = TopSettingWithScrollOffset(30) + 'px';
 
 	FDiv.style.display = 'block';
 
