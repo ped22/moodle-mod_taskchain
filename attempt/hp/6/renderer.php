@@ -715,7 +715,7 @@ class mod_taskchain_attempt_hp_6_renderer extends mod_taskchain_attempt_hp_rende
         $replace = ''
             .'$1$2'
             .'$1'."var t = getOffset($canvas, 'Top');"
-            .'$1'."setOffset(FDiv, 'Top', Math.max(t, TopSettingWithScrollOffset(30)));"
+            .'$1'."setOffset(FDiv, 'Top', Math.max(t, TopSettingWithScrollOffset(50)));"
         ;
         $substr = preg_replace($search, $replace, $substr, 1);
 
