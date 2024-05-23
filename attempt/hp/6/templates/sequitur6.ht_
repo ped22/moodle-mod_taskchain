@@ -49,7 +49,7 @@
 
 </head>
 
-<body onload="StartUp()" onunload="CheckLMSFinish()">
+<body onload="StartUp()">
 
 <!-- BeginTopNavButtons -->
 

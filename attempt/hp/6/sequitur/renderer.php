@@ -105,7 +105,7 @@ class mod_taskchain_attempt_hp_6_sequitur_renderer extends mod_taskchain_attempt
             }
             $insert = ''
                 ."	Finished = true;\n"
-                ."	HP.onunload(".mod_taskchain::STATUS_TIMEDOUT.",$flag);\n"
+                #."	HP.onunload(".mod_taskchain::STATUS_TIMEDOUT.",$flag);\n"
             ;
             $substr = substr_replace($substr, $insert, $pos, 0);
         }
