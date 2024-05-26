@@ -43,7 +43,7 @@ class mod_taskchain_renderer extends plugin_renderer_base {
     protected $TC;
 
     /** flag denoting whether or not to show the heading that is normally embedded within the header */
-    const SHOW_HEADING = true;
+    const SHOW_HEADING = false;
 
     /** empty table cell values (perhaps this should be a function?) */
     var $nonumber = '-';
