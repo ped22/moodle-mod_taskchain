@@ -453,7 +453,8 @@ class taskchain_source_hp extends taskchain_source {
      * pre_xmlize_filecontents
      */
     function pre_xmlize_filecontents() {
-        if ($this->filecontents) {
+        //if ($this->filecontents) {
+        if (false) {
             // encode all ampersands that are not part of HTML entities
             // http://stackoverflow.com/questions/310572/regex-in-php-to-match-that-arent-html-entities
             // Note: we could also use '<![CDATA[&]]>' as the replace string
