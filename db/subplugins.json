@@ -1,4 +1,9 @@
 {
+    "subplugintypes": {
+        "taskchainattempt": "attempt",
+        "taskchainsource": "source",
+        "taskchainreport": "report"
+    },
     "plugintypes": {
         "taskchainattempt": "mod\/taskchain\/attempt",
         "taskchainsource": "mod\/taskchain\/source",
