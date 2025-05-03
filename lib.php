@@ -74,13 +74,14 @@ function taskchain_supports($feature) {
         'FEATURE_RATE'             => false,
         'FEATURE_SHOW_DESCRIPTION' => true, // default=false (Moodle 2.2)
         'FEATURE_USES_QUESTIONS'   => false,
+        'FEATURE_CAN_DISPLAY'      => true, // Moodle >= 5.0
     );
     foreach ($constants as $constant => $value) {
         if (defined($constant) && $feature==constant($constant)) {
             return $value;
         }
     }
-    return false;
+    return null; // Return null to ensure we get the default value for any unknown FEATURE.
 }
 
 /**

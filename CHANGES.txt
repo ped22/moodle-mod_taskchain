@@ -2,6 +2,9 @@
 Change log for mod_taskchain
 ========================================
 
+2025-05-03 (14)
+ - ensure FEATURE_CAN_DISPLAY is enabled so that vocab activities are displayed in Moodle >= 5.0
+
 2025-05-03 (13)
  - modify db/subplugins.json for compatability with MDL-83705 and Moodle >= 5.x
 
