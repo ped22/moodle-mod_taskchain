@@ -61,10 +61,11 @@ div.StdDiv{
 	font-size: 100%;
 	color: [strTextColor];
 	padding: 0.5em;
-	border-style: solid;
-	border-width: 1px 1px 1px 1px;
+	border-style: none;
+	border-width: 0;
+	border-radius: 6px;
 	border-color: [strTextColor];
-	margin-bottom: 1px;
+	margin-bottom: 4px;
 }
 
 /* EndCorePageCSS */
@@ -111,12 +112,14 @@ div#Timer{
 }
 
 span#TimerText{
-	padding: 0.25em;
-	border-width: 1px;
-	border-style: solid;
+	padding: 0.5em;
+	border-width: 0px;
+	border-style: none;
+	border-radius: 2px;
 	font-weight: bold;
 	display: none;
 	color: [strTitleColor];
+	background-color: #FFFF9C;
 }
 
 span.Instructions{
@@ -217,6 +220,10 @@ table.FlashcardTable{
 	position: relative;
 	text-align: center;
 	padding: 0px;
+}
+
+.ProgressBar {
+	padding: 1em 0 1em 0;
 }
 
 table.FlashcardTable tr{
@@ -449,10 +456,12 @@ li.QuizQuestion{
 	border-width: 0px 0px 1px 0px;
 }
 
+
 ol.MCAnswers{
 	text-align: left;
-	list-style-type: upper-alpha;
-	padding: 1em;
+	list-style-type: none;
+	padding: 0em;
+	margin-top: 1em;
 }
 
 ol.MCAnswers li{
@@ -469,53 +478,58 @@ div.ShortAnswer{
 	padding: 1em;
 }
 
+div.ShortAnswer .FuncButton {
+	margin-right: 2em;
+}
+div.ShortAnswer .FuncButtonUp {
+	margin-right: 2em;
+}
+div.ShortAnswer .FuncButtonDown {
+	margin-right: 2em;
+}
+
 .FuncButton {
 	text-align: center;
 	border-style: solid;
+	border-radius: 0.25rem;
 [inclExBGColor]
-	border-left-color: [strFuncLightColor];
-	border-top-color: [strFuncLightColor];
-	border-right-color: [strFuncShadeColor];
-	border-bottom-color: [strFuncShadeColor];
-	color: [strTextColor];
-	background-color: [strExBGColor];
+	border-color: color-mix(in srgb, [strExBGColor], black 30%);
+	color: black;
+	background-color: color-mix(in srgb, [strExBGColor], white 50%);
 [/inclExBGColor]
-	border-width: 2px;
-	padding: 3px 6px 3px 6px;
+	border-width: 0px;
+	padding: 5px 6px 5px 6px;
 	cursor: pointer;
 }
 
 .FuncButtonUp {
-	color: [strExBGColor];
+	color: color-mix(in srgb, [strExBGColor], white 50%);
 	text-align: center;
 	border-style: solid;
+	border-radius: 0.25rem;
+	
 [inclExBGColor]
-	border-left-color: [strFuncLightColor];
-	border-top-color: [strFuncLightColor];
-	border-right-color: [strFuncShadeColor];
-	border-bottom-color: [strFuncShadeColor];
+	border-color: color-mix(in srgb, [strExBGColor], black 30%);
 [/inclExBGColor]
-	background-color: [strTextColor];
-	color: [strExBGColor];
-	border-width: 2px;
-	padding: 3px 6px 3px 6px;
+	background-color: color-mix(in srgb, [strExBGColor], black 30%);
+	color: color-mix(in srgb, [strExBGColor], white 50%);
+	border-width: 0px;
+	padding: 5px 6px 5px 6px;
 	cursor: pointer;
 }
 
 .FuncButtonDown {
-	color: [strExBGColor];
+	color: color-mix(in srgb, [strExBGColor], white 50%);
 	text-align: center;
 	border-style: solid;
+	border-radius: 0.25rem;
 [inclExBGColor]
-	border-left-color: [strFuncShadeColor];
-	border-top-color: [strFuncShadeColor];
-	border-right-color: [strFuncLightColor];
-	border-bottom-color: [strFuncLightColor];
-	background-color: [strTextColor];
-	color: [strExBGColor];
+	border-color: color-mix(in srgb, [strExBGColor], black 50%);
+	background-color: color-mix(in srgb, [strExBGColor], black 50%);
+	color: color-mix(in srgb, [strExBGColor], white 50%);
 [/inclExBGColor]
-	border-width: 2px;
-	padding: 3px 6px 3px 6px;
+	border-width: 0px;
+	padding: 5px 6px 5px 6px;
 	cursor: pointer;
 }
 

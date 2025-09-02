@@ -358,7 +358,7 @@ function CheckMCAnswer(QNum, ANum, Btn){
 	}
 
 //Hide the button while processing
-	Btn.style.display = 'none';
+	//Btn.style.display = 'none';
 
 //Increment the number of tries
 	State[QNum][2]++;
@@ -374,9 +374,10 @@ function CheckMCAnswer(QNum, ANum, Btn){
 //Should this answer be accepted as correct?
 	if (I[QNum][3][ANum][2] < 1){
 //It's wrong
-
+		Btn.style.backgroundColor = '#ff4e21';
+		Btn.style.color = "#ffffff"
 //Mark the answer
-		Btn.innerHTML = IncorrectIndicator;
+		//Btn.innerHTML = IncorrectIndicator;
 
 //Remove any previous score unless exercise is finished (6.0.3.8+)
 		if (Finished == false){
@@ -405,11 +406,16 @@ function CheckMCAnswer(QNum, ANum, Btn){
 				WriteToInstructions(QsDone);
 			}
 		}
+		//ShowMessage(Feedback);
+		//CheckFinished();
 	}
 	else{
 //It's right
 //Mark the answer
-		Btn.innerHTML = CorrectIndicator;
+		//Btn.innerHTML = CorrectIndicator;
+		Btn.style.backgroundColor = '#21ff25';
+		//Btn.style.color = "#ffffff"
+
 
 //Calculate the score for this question
 		CalculateMCQuestionScore(QNum);
@@ -428,10 +434,16 @@ function CheckMCAnswer(QNum, ANum, Btn){
 		else{
 			WriteToInstructions(QsDone);
 		}
+		
+		//setTimeout(function(fb){
+		//Finally, show the feedback
+		//	ShowMessage(fb);
+		//	CheckFinished();
+		//}, 300);
 	}
 
 //Show the button again
-	Btn.style.display = 'inline';
+	//Btn.style.display = 'inline';
 
 //Finally, show the feedback
 	ShowMessage(Feedback);

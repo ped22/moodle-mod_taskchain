@@ -28,6 +28,9 @@ function DownTime(){
 		TimeOver = true;
 		TimesUp();
 	}
+	if (Seconds < 5){
+		document.getElementById('TimerText').style.backgroundColor = "red";
+	}
 	Seconds--;
 }
 
