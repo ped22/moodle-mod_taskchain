@@ -571,6 +571,7 @@ class mod_taskchain_attempt_hp_6_jquiz_xml_v6_autoadvance_renderer extends mod_t
                 ."						var next_q = parseInt(matches[0]);\n"
                 ."						if (State[next_q] && State[next_q][0]<0) {\n"
                 ."							// change to unanswered question\n"
+                ."                          lock_clicks = true;\n"
                 ."                          setTimeout((n) => {\n"
                 ."                            ChangeQ(n);\n"
                 ."                          }, 500, next_i - CurrQNum);\n"
@@ -641,6 +642,7 @@ class mod_taskchain_attempt_hp_6_jquiz_xml_v6_autoadvance_renderer extends mod_t
             .'\\1'.'var q = AA_JQuiz_GetQ(CurrQNum);'
             .'\\1'.'AA_SetProgressDot(q, q);'
             .'\\1'.'StretchCanvasToCoverContent(true);'
+            .'\\1'.'lock_clicks = false;'
         ;
         $substr = preg_replace($search, $replace, $substr);
 
