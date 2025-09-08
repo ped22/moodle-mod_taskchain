@@ -86,7 +86,6 @@
 [/inclTimer]
 
 </div>
-
 <div id="InstructionsDiv" class="StdDiv">
 	<div id="Instructions">[strInstructions]</div>
 </div>
@@ -157,6 +156,8 @@
 <!-- BeginSubmissionForm -->
 
 <!-- EndSubmissionForm -->
+
+<!-- ExitButton -->
 
 </body>
 

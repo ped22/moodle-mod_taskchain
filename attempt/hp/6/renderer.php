@@ -1623,8 +1623,8 @@ class mod_taskchain_attempt_hp_6_renderer extends mod_taskchain_attempt_hp_rende
             }
             $confirm = get_string('confirmstop', 'mod_taskchain');
             //$search = '/<!-- BeginTopNavButtons -->'.'.*?'.'<!-- EndTopNavButtons -->/s';
-            $search = '/<(div class="Titles")>/s';
-            $replace = '<$1 style="position: relative">'."\n\t"
+            $search = '/<!-- ExitButton -->/s';
+            $replace = '<div style="position: relative">'."\n\t"
                 .'<div class="taskchainstopbutton">'
                 .'<button class="FuncButton" '
                     .'onclick="'.$this->get_stop_onclick().'" '
@@ -1633,6 +1633,7 @@ class mod_taskchain_attempt_hp_6_renderer extends mod_taskchain_attempt_hp_rende
                     .'onmousedown="FuncBtnDown(this)" onmouseup="FuncBtnOut(this)">'
                     .mod_taskchain::textlib('utf8_to_entities', $stoptext)
                 .'</button>'
+                .'</div>'
                 .'</div>'
             ;
             $this->bodycontent = preg_replace($search, $replace, $this->bodycontent, 1);
