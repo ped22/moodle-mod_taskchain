@@ -702,7 +702,12 @@ function taskchain_delete_tasks($taskids) {
         unset($attemptids);
     }
     $DB->delete_records_list('taskchain_cache', 'taskid', $taskids);
-    $DB->delete_records_list('taskchain_conditions', 'taskid', $taskids); // Conditiontaskid, nexttaskid.
+    $DB->delete_records_list('taskchain_conditions', 'taskid', $taskids);
+    // Also delete the conditions of other tasks that refer to these tasks: a pre-condition
+    // on a deleted task could never be met (so its task could never be started),
+    // and a post-condition whose next task was deleted would send the user to a missing task.
+    $DB->delete_records_list('taskchain_conditions', 'conditiontaskid', $taskids);
+    $DB->delete_records_list('taskchain_conditions', 'nexttaskid', $taskids);
     $DB->delete_records_list('taskchain_questions', 'taskid', $taskids);
     $DB->delete_records_list('taskchain_task_scores', 'taskid', $taskids);
     $DB->delete_records_list('taskchain_tasks', 'id', $taskids);
