@@ -2517,7 +2517,8 @@ function taskchain_reset_gradebook($courseid, $type = '') {
  * taskchain_reset_userdata
  *
  * Course reset: delete all users' attempts at the course's TaskChain activities
- * (if "Delete all attempts" is ticked).
+ * (if "Delete all attempts" is ticked), and move the activities' and tasks' open/close dates
+ * by the change in the course start date.
  *
  * @uses $DB
  * @param stdClass $data the data submitted from the reset course form
@@ -2567,6 +2568,25 @@ function taskchain_reset_userdata($data) {
         $status[] = array(
             'component' => $component,
             'item' => get_string('deleteallattempts', 'mod_taskchain'),
+            'error' => false,
+        );
+    }
+
+    // Move the activities' and tasks' dates by as much as the course's start date has moved.
+    if (! empty($data->timeshift) && count($chainids)) {
+        $in = $DB->get_in_or_equal($chainids);
+        $tables = array('taskchain_chains' => 'id ' . $in[0], 'taskchain_tasks' => 'chainid ' . $in[0]);
+        foreach ($tables as $table => $select) {
+            foreach (array('timeopen', 'timeclose') as $field) {
+                $sql = 'UPDATE {' . $table . '} SET ' . $field . ' = ' . $field . ' + ?' .
+                       ' WHERE ' . $select . ' AND ' . $field . ' > 0';
+                $DB->execute($sql, array_merge(array($data->timeshift), $in[1]));
+            }
+        }
+        taskchain_refresh_events($data->courseid);
+        $status[] = array(
+            'component' => $component,
+            'item' => get_string('datechanged'),
             'error' => false,
         );
     }
