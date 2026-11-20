@@ -673,8 +673,34 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
      */
     public function get_cache_md5key() {
         global $CFG;
-        // Include the language, because the page includes strings in the user's language.
-        return md5($this->TC->task->outputformat . $this->page->theme->name . $CFG->wwwroot . current_language());
+        // Include the language, because the page includes strings in the user's language,
+        // and TaskChain's version, so that pages cached by an earlier version (with older
+        // templates and scripts) are not used after an update.
+        return md5($this->TC->task->outputformat . $this->page->theme->name . $CFG->wwwroot . current_language() .
+            get_config('mod_taskchain', 'version'));
+    }
+
+    /**
+     * delete_old_cache
+     *
+     * Delete a task's cached pages that were made by earlier versions of TaskChain
+     * (their md5key includes the version, so they are never used again),
+     * i.e. the rows older than the upgrade to the current version.
+     *
+     * @param int $taskid
+     */
+    protected function delete_old_cache($taskid) {
+        global $DB;
+        $version = get_config('mod_taskchain', 'version');
+        $sql = 'SELECT MAX(timemodified) FROM {upgrade_log} WHERE plugin = ? AND version = ?';
+        if ($upgraded = $DB->get_field_sql($sql, array('mod_taskchain', $version))) {
+            try {
+                $DB->delete_records_select('taskchain_cache', 'taskid = ? AND timemodified < ?', array($taskid, $upgraded));
+            } catch (dml_exception $e) {
+                // E.g. a deadlock between users opening the task at the same moment: a later save deletes them.
+                debugging($e->getMessage(), DEBUG_DEVELOPER);
+            }
+        }
     }
 
     /**
@@ -833,6 +859,7 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
                 throw new moodle_exception('error_updaterecord', 'taskchain', '', 'taskchain_cache');
             }
         } else {
+            $this->delete_old_cache($this->cache->taskid);
             if (! $this->cache->id = $DB->insert_record('taskchain_cache', $this->cache)) {
                 throw new moodle_exception('error_insertrecord', 'taskchain', '', 'taskchain_cache');
             }
