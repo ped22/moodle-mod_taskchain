@@ -2584,72 +2584,57 @@ function taskchain_reset_userdata($data) {
     ));
 }
 
-/*
-* This standard function will check all instances of this module
-* and make sure there are up-to-date events created for each of them.
-* If courseid = 0, then every taskchain event in the site is checked, else
-* only taskchain events belonging to the course specified are checked.
-* This function is used, in its new format, by restore_refresh_events()
-* in backup/backuplib.php
-*
-* @param int $courseid : relative path (below $CFG->dirroot) of folder holding class definitions
-*/
 /**
  * taskchain_refresh_events
  *
- * @param int $courseid (optional, default=0)
- * @return mixed
+ * Make sure the calendar events of TaskChain activities are up to date.
+ * Called by Moodle e.g. when an activity is shown or hidden (with $instance and $cm),
+ * when a course is restored or reset, by the "refresh calendar events" task,
+ * and when the "taskchain_maxeventlength" setting changes.
+ *
+ * @param int $courseid (optional, default=0) only this course; 0 means every course
+ * @param int|stdClass $instance (optional, default=null) only this TaskChain activity
+ * @param stdClass $cm (optional, default=null) its course module (not used)
+ * @return bool true
  */
-function taskchain_refresh_events($courseid = 0) {
-    global $CFG, $DB;
+function taskchain_refresh_events($courseid = 0, $instance = null, $cm = null) {
+    global $DB;
 
-    if ($courseid && is_numeric($courseid)) {
-        $params = array('course' => $courseid);
+    if ($instance) {
+        if (! is_object($instance)) {
+            $instance = $DB->get_record('taskchain', array('id' => $instance), '*', MUST_EXIST);
+        }
+        $taskchains = array($instance);
+    } else if ($courseid && is_numeric($courseid)) {
+        $taskchains = $DB->get_records('taskchain', array('course' => $courseid));
     } else {
-        $params = array();
-    }
-    if (! $taskchains = $DB->get_records('taskchain', $params)) {
-        return true; // No taskchains.
+        $taskchains = $DB->get_records('taskchain');
     }
 
-    // Get previous ids for events for these taskchains.
-    list($filter, $params) = $DB->get_in_or_equal(array_keys($taskchains));
-    if ($eventids = $DB->get_records_select('event', "modulename='taskchain' AND instance $filter", $params, 'id', 'id')) {
-        $eventids = array_keys($eventids);
-    } else {
-        $eventids = array();
-    }
-
-    // We're going to count the taskchains so we can detect the last one.
-    $i = 0;
-    $count = count($taskchains);
-
-    // Add events for these taskchain chains
-    // eventids will be reused where possible.
+    // Each activity is updated with its own chain and its own events.
     foreach ($taskchains as $taskchain) {
-        $i++;
-        $delete = ($i == $count);
-        taskchain_update_events($taskchain, $chain, $eventids, $delete);
+        taskchain_update_events_wrapper($taskchain);
     }
-
-    // All done.
     return true;
 }
 
 /**
- * Update calendar events for a single TaskChain activity
- * This function is intended to be called just after
- * a TaskChain activity has been created or edited.
+ * taskchain_update_events_wrapper
  *
- * @param xxx $taskchain
+ * Update the calendar events for a single TaskChain activity,
+ * reusing its existing events and deleting any that are no longer needed.
+ * This function is called just after a TaskChain activity has been created or edited,
+ * and by taskchain_refresh_events().
+ *
+ * @param stdClass $taskchain record from the "taskchain" table
  */
 function taskchain_update_events_wrapper($taskchain) {
-    global $DB;
-    if ($eventids = $DB->get_records('event', array('modulename' => 'taskchain', 'instance' => $taskchain->id), 'id', 'id')) {
-        $eventids = array_keys($eventids);
-    } else {
-        $eventids = array();
-    }
+    global $CFG, $DB;
+    require_once($CFG->dirroot . '/mod/taskchain/locallib.php');
+    $params = array('parenttype' => mod_taskchain::PARENTTYPE_ACTIVITY, 'parentid' => $taskchain->id);
+    $chain = $DB->get_record('taskchain_chains', $params);
+    $params = array('modulename' => 'taskchain', 'instance' => $taskchain->id);
+    $eventids = array_keys($DB->get_records('event', $params, 'id', 'id'));
     taskchain_update_events($taskchain, $chain, $eventids, true);
 }
 
