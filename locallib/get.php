@@ -1242,21 +1242,18 @@ class taskchain_get extends taskchain_base {
         static $groups;
 
         if (! isset($groups)) {
-            // Get list of groups (if any) for this user.
-            if (empty($this->TC->coursemodule->groupmembersonly) || empty($this->TC->coursemodule->groupingid)) {
-                $groups = $allgroups;
-            } else if ($this->TC->can('mod/taskchain:manage') || $this->TC->can('moodle/site:accessallgroups')) {
+            // Get list of groups (if any) for this user: conditions can be for "any group" (groupid 0)
+            // or for one group of the course (of the activity's grouping, if it has one, as on the condition form).
+            $context = $this->TC->coursemodule->context;
+            if ($this->TC->can->manage() || has_capability('moodle/site:accessallgroups', $context)) {
                 $groups = $allgroups;
             } else {
                 // Groups in this course/grouping to which this user belongs.
-                if (
-                    $groups = groups_get_all_groups(
-                    $this->TC->course->id,
-                    $this->TC->userid,
-                    $this->TC->coursemodule->groupingid
-                    )
-                ) {
-                    $groups = implode(',', array_keys($groups));
+                $groupingid = (empty($this->TC->coursemodule->groupingid) ? 0 : $this->TC->coursemodule->groupingid);
+                if ($groups = groups_get_all_groups($this->TC->course->id, $this->TC->userid, $groupingid)) {
+                    $groups = implode(',', array_map('intval', array_keys($groups)));
+                } else {
+                    $groups = 0; // Not in any group: only the conditions for "any group".
                 }
             }
         }
