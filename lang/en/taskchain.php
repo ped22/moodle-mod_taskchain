@@ -857,6 +857,7 @@ $string['noscore'] = 'No score';
 $string['nosourcefilesettings'] = 'TaskChain record is missing source file information';
 $string['notaskchains'] = 'No TaskChains found';
 $string['notasksforyou'] = 'Sorry, there are no tasks for you to do right now.';
+$string['notasksforyouteacher'] = 'No task can be started: check the pre-conditions of the tasks (e.g. the first task cannot require a previous task) on the {$a} page.';
 $string['notasksinchain'] = 'There are no tasks in this TaskChain chain';
 $string['notattemptedyet'] = 'Not attempted yet';
 $string['notavailable'] = 'Sorry, this activity is not currently available to you.';

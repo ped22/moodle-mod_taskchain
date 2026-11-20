@@ -89,7 +89,25 @@ if ($warnings = $output->warnings('chain')) {
 
 if (empty($TC->task)) {
     echo $output->header();
-    echo $output->taskmenu();
+    if ($menu = $output->taskmenu()) {
+        echo $menu;
+    } else {
+        // No task can be shown (e.g. the pre-conditions of the first task cannot be satisfied):
+        // say so, instead of showing an empty page.
+        $message = get_string('notasksforyou', 'mod_taskchain');
+        if ($TC->can->manage()) {
+            $url = new moodle_url('/mod/taskchain/edit/tasks.php', array('id' => $TC->coursemodule->id));
+            $link = html_writer::link($url, get_string('edittasks', 'mod_taskchain'));
+            $message .= html_writer::tag('p', get_string('notasksforyouteacher', 'mod_taskchain', $link));
+        }
+        if (class_exists('\\core\\output\\notification')) {
+            $type = \core\output\notification::NOTIFY_WARNING;
+        } else {
+            $type = 'notifyproblem';
+        }
+        echo $output->notification($message, $type);
+        echo $output->continue_button(new moodle_url('/mod/taskchain/view.php', array('id' => $TC->coursemodule->id)));
+    }
     echo $output->footer();
 } else {
     echo $output->render_attempt();
