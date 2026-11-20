@@ -2199,8 +2199,8 @@ class mod_taskchain extends taskchain_base {
                     }
                 }
                 if ($random) {
-                    // Remove this id from the $ids array.
-                    $ids = array_splice($ids, $i, 1);
+                    // Remove this id from the $ids array (array_splice() changes $ids itself, and renumbers it).
+                    array_splice($ids, $i, 1);
                     $i_max--;
                     $i = 0;
                 } else {
