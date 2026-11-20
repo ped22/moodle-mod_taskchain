@@ -751,6 +751,9 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
         }
 
         // Custom fields.
+        // Load the source and config file objects: they may not be loaded yet (e.g. for students),
+        // and without them a replaced quiz file would not be noticed.
+        $this->TC->task->get_source();
         $fileareas = array('source', 'config');
         foreach ($fileareas as $filearea) {
             if (isset($this->TC->task->$filearea) && $this->TC->task->$filearea) {
@@ -762,7 +765,8 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
                     return false; // File has been modified.
                 }
                 if (method_exists($this->TC->task->$filearea->file, 'get_repository_id')) {
-                    if ($repositoryid != $this->TC->task->$filearea->file->get_repository_id()) {
+                    // Note: intval(), because a file stored in Moodle has no repository id (null), and the cache stores 0.
+                    if (intval($repositoryid) != intval($this->TC->task->$filearea->file->get_repository_id())) {
                         return false; // File repository id has changed.
                     }
                 }
@@ -887,9 +891,12 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
         $fileareas = array('source', 'config');
         foreach ($fileareas as $filearea) {
             $this->cache->{$filearea . 'repositoryid'} = 0; // Default.
-            if (isset($this->TC->task->$filearea->file)) {
-                if (method_exists($this->TC->task->$filearea->file, 'get_repository_id')) {
-                    if ($repositoryid = $this->TC->task->$filearea->file->get_repository_id()) {
+            // Note: not isset() on "file": it may be a magic property, and then isset() is false,
+            // so the repository id of a file from a repository was never stored.
+            if (isset($this->TC->task->$filearea) && $this->TC->task->$filearea) {
+                $file = $this->TC->task->$filearea->file;
+                if (is_object($file) && method_exists($file, 'get_repository_id')) {
+                    if ($repositoryid = $file->get_repository_id()) {
                         $this->cache->{$filearea . 'repositoryid'} = $repositoryid;
                     }
                 }
