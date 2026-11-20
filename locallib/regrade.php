@@ -445,7 +445,8 @@ class taskchain_regrade extends taskchain_base {
         $duration = 0;
         $minstatus = 0;
         $maxstatus = 0;
-        $timemodified = 0;
+        $timemodified = 0; // For the "Last ..." grade methods: the most recent task score so far.
+        $lasttaskscoreid = 0;
 
         $select = "userid = ? AND cnumber = ? AND taskid in ($taskids)";
         $params = array($userid, $cnumber);
@@ -527,30 +528,32 @@ class taskchain_regrade extends taskchain_base {
                             }
                             break;
                         case self::GRADEMETHOD_LAST:
-                            if ($timemodified < $taskscore->timemodified) {
-                                $grade = $weightedscore;
-                            }
-                            break;
                         case self::GRADEMETHOD_LASTCOMPLETED:
-                            if ($timemodified < $taskscore->timemodified && ($taskscore->status == self::STATUS_COMPLETED)) {
-                                $grade = $weightedscore;
-                            }
-                            break;
                         case self::GRADEMETHOD_LASTTIMEDOUT:
-                            if (
-                                $timemodified < $taskscore->timemodified &&
-                                ($taskscore->status == self::STATUS_COMPLETED || $taskscore->status == self::STATUS_TIMEDOUT)
-                            ) {
-                                $grade = $weightedscore;
-                            }
-                            break;
                         case self::GRADEMETHOD_LASTABANDONED:
-                            if (
-                                $timemodified < $taskscore->timemodified &&
-                                ($taskscore->status == self::STATUS_COMPLETED || $taskscore->status == self::STATUS_TIMEDOUT ||
-                                    $taskscore->status == self::STATUS_ABANDONED)
-                            ) {
-                                $grade = $weightedscore;
+                            // The score of the most recently modified task score with an accepted status.
+                            switch ($chain->attemptgrademethod) {
+                                case self::GRADEMETHOD_LASTCOMPLETED:
+                                    $statuses = array(self::STATUS_COMPLETED);
+                                    break;
+                                case self::GRADEMETHOD_LASTTIMEDOUT:
+                                    $statuses = array(self::STATUS_COMPLETED, self::STATUS_TIMEDOUT);
+                                    break;
+                                case self::GRADEMETHOD_LASTABANDONED:
+                                    $statuses = array(self::STATUS_COMPLETED, self::STATUS_TIMEDOUT, self::STATUS_ABANDONED);
+                                    break;
+                                default:
+                                    $statuses = null; // Any status.
+                            }
+                            if ($statuses === null || in_array($taskscore->status, $statuses)) {
+                                if (
+                                    $taskscore->timemodified > $timemodified ||
+                                    ($taskscore->timemodified == $timemodified && $taskscore->id > $lasttaskscoreid)
+                                ) {
+                                    $grade = $weightedscore;
+                                    $timemodified = $taskscore->timemodified;
+                                    $lasttaskscoreid = $taskscore->id;
+                                }
                             }
                             break;
                     } // end switch
