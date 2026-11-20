@@ -1751,6 +1751,11 @@ function taskchain_grade_item_update($taskchain, $grades = null) {
         // Therefore, we force the removal of empty gradeitems.
         $params['deleted'] = true;
     }
+    if ($grades === 'reset') {
+        // Course reset: delete all grades (see taskchain_reset_gradebook()).
+        $params['reset'] = true;
+        $grades = null;
+    }
     return grade_update('mod/taskchain', $taskchain->course, 'mod', 'taskchain', $taskchain->id, 0, $grades, $params);
 }
 
@@ -2511,77 +2516,62 @@ function taskchain_reset_gradebook($courseid, $type = '') {
 /**
  * taskchain_reset_userdata
  *
+ * Course reset: delete all users' attempts at the course's TaskChain activities
+ * (if "Delete all attempts" is ticked).
+ *
  * @uses $DB
- * @param xxx $data
- * @return xxx
+ * @param stdClass $data the data submitted from the reset course form
+ * @return array status messages ('component', 'item', 'error')
  */
 function taskchain_reset_userdata($data) {
     global $CFG, $DB;
     require_once($CFG->dirroot . '/mod/taskchain/locallib.php');
 
-    if (empty($data->reset_taskchain_deleteallattempts)) {
-        return array();
-    }
+    $status = array();
+    $component = get_string('modulenameplural', 'mod_taskchain');
 
     if (! $taskchains = $DB->get_records('taskchain', array('course' => $data->courseid), 'id', 'id')) {
-        return array();
+        return $status;
     }
+    $in = $DB->get_in_or_equal(array_keys($taskchains));
+    $chainselect = 'parenttype = ? AND parentid ' . $in[0];
+    $chainparams = array_merge(array(mod_taskchain::PARENTTYPE_ACTIVITY), $in[1]);
+    $chainids = array_keys($DB->get_records_select('taskchain_chains', $chainselect, $chainparams, 'id', 'id'));
 
-    list($select, $params) = $DB->get_in_or_equal(array_keys($taskchains));
-    $select = "parentid $select AND parenttype = ?";
-    $params[] = mod_taskchain::PARENTTYPE_ACTIVITY;
-    if (! $chains = $DB->get_records_select('taskchain_chains', $select, $params, 'id', 'id, parenttype, parentid')) {
-        return array();
-    }
-
-    // since there may be a large number of records in the taskchain_task_attempts table,
-    // we proceed unit by unit to try and limit effect of timeouts and memory overloads.
-
-    foreach ($chains as $chain) {
-        // $state determines what data is deleted
-        // 0 : delete taskchain_details
-        // 1 : delete taskchain_responses
-        // 2 : delete taskchain_task_attempts
-        // 3 : delete taskchain_task_scores
-        // 4 : delete taskchain_chain_attempts
-        // 5 : delete taskchain_chain_grades
-        for ($state = 2; $state <= 5; $state++) {
-            if ($state <= 3) {
-                // Get associated $task records.
-                if ($taskids = $DB->get_records('taskchain_tasks', array('chainid' => $chain->id), '', 'id')) {
-                    // Remove task grade/attempts.
-                    list($select, $params) = $DB->get_in_or_equal(array_keys($taskids));
-                    if ($state <= 2) {
-                        if ($attempts = $DB->get_records_select('taskchain_task_attempts', "taskid $select", $params, 'id', 'id')) {
-                            $ids = array_keys($attempts);
-                            if ($state == 0) {
-                                $DB->delete_records_list('taskchain_details', 'attemptid', $ids);
-                                $DB->delete_records_list('taskchain_responses', 'attemptid', $ids);
-                                $DB->delete_records_list('taskchain_task_attempts', 'id', $ids);
-                            }
-                        }
-                    }
-                    if ($state == 3) {
-                        $DB->delete_records_select('taskchain_task_scores', "taskid $select", $params);
-                    }
+    if (! empty($data->reset_taskchain_deleteallattempts)) {
+        // There may be a large number of task attempts, so delete them chain by chain,
+        // and delete their responses and details by attempt id, in chunks
+        // (a subquery here makes MySQL/MariaDB read the whole responses table).
+        foreach ($chainids as $chainid) {
+            if ($taskids = array_keys($DB->get_records('taskchain_tasks', array('chainid' => $chainid), '', 'id'))) {
+                $in = $DB->get_in_or_equal($taskids);
+                $taskselect = 'taskid ' . $in[0];
+                $taskparams = $in[1];
+                $attemptids = $DB->get_fieldset_select('taskchain_task_attempts', 'id', $taskselect, $taskparams);
+                foreach (array_chunk($attemptids, 1000) as $ids) {
+                    $DB->delete_records_list('taskchain_details', 'attemptid', $ids);
+                    $DB->delete_records_list('taskchain_responses', 'attemptid', $ids);
+                    $DB->delete_records_list('taskchain_task_attempts', 'id', $ids);
                 }
+                $DB->delete_records_select('taskchain_task_scores', $taskselect, $taskparams);
             }
-            if ($state == 4) {
-                $params = array('chainid'  => $chain->id);
-                $DB->delete_records('taskchain_chain_attempts', $params);
-            }
-            if ($state == 5) {
-                $params = array('parentid' => $chain->parentid, 'parenttype' => $chain->parenttype);
-                $DB->delete_records('taskchain_chain_grades', $params);
-            }
+            $DB->delete_records('taskchain_chain_attempts', array('chainid' => $chainid));
         }
+        $DB->delete_records_select('taskchain_chain_grades', $chainselect, $chainparams);
+
+        // Remove the grades from the gradebook, unless the whole gradebook is reset anyway.
+        if (empty($data->reset_gradebook_grades)) {
+            taskchain_reset_gradebook($data->courseid);
+        }
+
+        $status[] = array(
+            'component' => $component,
+            'item' => get_string('deleteallattempts', 'mod_taskchain'),
+            'error' => false,
+        );
     }
 
-    return array(array(
-        'component' => get_string('modulenameplural', 'mod_taskchain'),
-        'item' => get_string('deleteallattempts', 'mod_taskchain'),
-        'error' => false,
-    ));
+    return $status;
 }
 
 /**
