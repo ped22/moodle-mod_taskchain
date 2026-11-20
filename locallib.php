@@ -234,6 +234,14 @@ class mod_taskchain extends taskchain_base {
 
             // Get main id for this page.
             $set_page_context = true;
+
+            // TaskChain's own pages call require_login() (below), which sets the page's course, cm and context
+            // itself: setting the context here first breaks Moodle's notices from require_login() (e.g. a hidden
+            // course, or a user who is not enrolled), whose page then has a module context but the site as its course.
+            $requirelogin = (substr($pageclass, 0, 13) == 'mod-taskchain');
+            if ($requirelogin) {
+                $set_page_context = false;
+            }
             switch ($pageid) {
                 case 'course-mod':
                     $coursemoduleid = optional_param('delete', $coursemoduleid, PARAM_INT);
@@ -556,7 +564,7 @@ class mod_taskchain extends taskchain_base {
             // Require_login must come before inclusion of script libraries
             // so that correct language is set for calls to get_string() in the
             // included libraries.
-            if (substr($pageclass, 0, 13) == 'mod-taskchain') {
+            if ($requirelogin) {
                 require_login($this->course->id, true, $this->coursemodule);
             }
 
