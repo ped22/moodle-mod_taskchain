@@ -573,8 +573,9 @@ class taskchain_regrade extends taskchain_base {
                 $duration += $taskscore->duration;
             } // end foreach $tasks
 
-            // Don't let grade go above gradelimit.
-            $grade = min($grade, $chain->gradelimit);
+            // The attempt grade is a percentage, so don't let it go above 100
+            // (the chain grade is scaled to between 0 and gradelimit later, in attempts('chain')).
+            $grade = min($grade, 100);
         } // end if $taskscores
 
         if ($use_this_tasks && $this->TC->chainattempt) {

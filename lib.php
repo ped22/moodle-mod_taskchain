@@ -1620,7 +1620,10 @@ function taskchain_get_user_grades($taskchain, $userid = 0) {
         } else { // 1 - 10
             $precision = 2;
         }
-        $rawgrade = "ROUND(grade * ($taskchain->gradeweighting / $taskchain->gradelimit), $precision)";
+        // The chain grade is between 0 and gradelimit, and the maximum grade in the gradebook
+        // is gradelimit * gradeweighting / 100 (see taskchain_grade_item_update()),
+        // so the grade sent to the gradebook is the chain grade * gradeweighting / 100.
+        $rawgrade = "ROUND(grade * ($taskchain->gradeweighting / 100), $precision)";
     } else {
         $rawgrade = '0';
     }
