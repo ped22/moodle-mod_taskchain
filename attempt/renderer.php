@@ -730,7 +730,8 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
 
         $select = 'taskid = ? AND md5key = ?';
         $params = array($this->TC->task->id, $this->get_cache_md5key());
-        if (! $this->cache = $DB->get_record_select('taskchain_cache', $select, $params)) {
+        // Note: IGNORE_MULTIPLE, because users opening a task at the same moment may each have saved a copy.
+        if (! $this->cache = $DB->get_record_select('taskchain_cache', $select, $params, '*', IGNORE_MULTIPLE)) {
             return false; // no cached content for this task (+ outputformat + currenttheme + wwwroot)
         }
 
@@ -863,6 +864,19 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
             if (! $this->cache->id = $DB->insert_record('taskchain_cache', $this->cache)) {
                 throw new moodle_exception('error_insertrecord', 'taskchain', '', 'taskchain_cache');
             }
+        }
+
+        // Delete older copies: users who open a task at the same moment may each have saved one
+        // (the extra copies are never used, but they fill the table). Only older copies are deleted,
+        // so that simultaneous saves cannot delete each other's copies; and a failure here
+        // (e.g. a deadlock between simultaneous deletes) is ignored: a later save deletes them.
+        $select = 'taskid = ? AND md5key = ? AND id < ?';
+        $params = array($this->cache->taskid, $this->cache->md5key, $this->cache->id);
+        try {
+            $DB->delete_records_select('taskchain_cache', $select, $params);
+        } catch (dml_exception $e) {
+            // Ignore it (see above).
+            debugging($e->getMessage(), DEBUG_DEVELOPER);
         }
 
         // Cache record was successfully updated/inserted.
