@@ -728,6 +728,10 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
             return false; // This renderer doesn't use a cache.
         }
 
+        if ($this->has_user_data()) {
+            return false; // This page must not be cached.
+        }
+
         $select = 'taskid = ? AND md5key = ?';
         $params = array($this->TC->task->id, $this->get_cache_md5key());
         // Note: IGNORE_MULTIPLE, because users opening a task at the same moment may each have saved a copy.
@@ -778,6 +782,19 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
         }
         $this->cache_uptodate = true;
         return $this->cache_uptodate;
+    }
+
+    /**
+     * has_user_data
+     *
+     * Does the page include data of the current user? Then it must not be cached,
+     * or other users would get it: with student feedback by "formmail",
+     * the page includes the user's name and email address (see fix_feedbackform()).
+     *
+     * @return boolean
+     */
+    protected function has_user_data() {
+        return ($this->TC->task->studentfeedback == mod_taskchain::FEEDBACK_FORMMAIL);
     }
 
     /**
@@ -834,6 +851,10 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
 
         if ($this->cache_uptodate) {
             return; // Cache is already uptodate.
+        }
+
+        if ($this->has_user_data()) {
+            return; // This page must not be cached.
         }
 
         if (! $this->cache) {
