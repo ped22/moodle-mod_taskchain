@@ -1329,10 +1329,11 @@ class taskchain_get extends taskchain_base {
                     'taskchain_task_attempts',
                     $select,
                     $params,
-                    'resumestart DESC'
+                    'id DESC'
                 );
             }
-            $this->TC->cache_taskattemptsusort[$taskid] = 'time_desc';
+            // Not sorted yet: check_conditions() sorts them as each condition needs (see usort_attempts()).
+            $this->TC->cache_taskattemptsusort[$taskid] = '';
         }
         if (empty($this->TC->cache_taskattempts[$taskid])) {
             return false;

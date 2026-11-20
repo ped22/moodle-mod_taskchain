@@ -1840,9 +1840,10 @@ class mod_taskchain extends taskchain_base {
 
                 // Get delay (=time elapsed) since most recent attempt.
                 $attempt = reset($attempts);
-                $attemptdelay = ($this->time - $attempt->timemodified);
+                $attemptdelay = ($this->time - self::attempt_time($attempt));
 
-                if ($condition->attemptdelay < 0 && $attemptdelay < $condition->attemptdelay) {
+                // A negative attemptdelay is a minimum delay, a positive one a maximum delay.
+                if ($condition->attemptdelay < 0 && $attemptdelay < abs($condition->attemptdelay)) {
                     // Not enough time elapsed, so precondition fails.
                     return false;
                 }
@@ -1918,6 +1919,7 @@ class mod_taskchain extends taskchain_base {
 
                 case taskchain::ATTEMPTTYPE_CONSECUTIVE:
                     // Sort attempts by time DESC.
+                    $this->usort_attempts($attempts, $usort, 'time_desc');
                     foreach ($attempts as $attempt) {
                         $ok = $this->check_condition_score($condition, $attempt->score);
                         if ($ok) {
@@ -2024,12 +2026,87 @@ class mod_taskchain extends taskchain_base {
      */
     public function usort_attempts(&$attempts, &$usort, $newusort) {
         if ($usort == $newusort) {
-            // Do nothing - attempts are already in order.
-        } else {
-            $usort = $newusort;
-            // "uasort" maintains the id => record correlation (where "usort" does not)
-            uasort($attempts, 'taskchain_usort_' . $usort);
+            return; // Attempts are already in order.
         }
+        switch ($newusort) {
+            case 'time_desc': // Most recent first.
+            case 'duration_asc': // Fastest first.
+            case 'duration_desc': // Slowest first.
+                // Note: "uasort" maintains the id => record correlation (where "usort" does not).
+                uasort($attempts, array($this, 'usort_attempts_' . $newusort));
+                break;
+            default:
+                throw new coding_exception('Unknown sort order for task attempts: ' . $newusort);
+        }
+        $usort = $newusort;
+    }
+
+    /**
+     * usort_attempts_time_desc: compare two task attempts, the most recent first (for equal times, the highest id).
+     *
+     * @param stdClass $a a record from the taskchain_task_attempts table
+     * @param stdClass $b a record from the taskchain_task_attempts table
+     * @return int
+     */
+    public function usort_attempts_time_desc($a, $b) {
+        $atime = self::attempt_time($a);
+        $btime = self::attempt_time($b);
+        if ($atime == $btime) {
+            return self::usort_compare($b->id, $a->id);
+        }
+        return self::usort_compare($btime, $atime);
+    }
+
+    /**
+     * usort_attempts_duration_asc: compare two task attempts, the fastest first (for equal durations, the highest id).
+     *
+     * @param stdClass $a a record from the taskchain_task_attempts table
+     * @param stdClass $b a record from the taskchain_task_attempts table
+     * @return int
+     */
+    public function usort_attempts_duration_asc($a, $b) {
+        if ($a->duration == $b->duration) {
+            return self::usort_compare($b->id, $a->id);
+        }
+        return self::usort_compare($a->duration, $b->duration);
+    }
+
+    /**
+     * usort_attempts_duration_desc: compare two task attempts, the slowest first (for equal durations, the highest id).
+     *
+     * @param stdClass $a a record from the taskchain_task_attempts table
+     * @param stdClass $b a record from the taskchain_task_attempts table
+     * @return int
+     */
+    public function usort_attempts_duration_desc($a, $b) {
+        if ($a->duration == $b->duration) {
+            return self::usort_compare($b->id, $a->id);
+        }
+        return self::usort_compare($b->duration, $a->duration);
+    }
+
+    /**
+     * usort_compare
+     *
+     * @param mixed $x
+     * @param mixed $y
+     * @return int -1, 0 or 1 if $x is less than, equal to or greater than $y
+     */
+    public static function usort_compare($x, $y) {
+        if ($x == $y) {
+            return 0;
+        }
+        return ($x < $y ? -1 : 1);
+    }
+
+    /**
+     * attempt_time: the time of a task attempt's most recent activity (start, finish, resume).
+     *
+     * @param stdClass $attempt a record from the taskchain_task_attempts table
+     * @return int
+     */
+    public static function attempt_time($attempt) {
+        return max($attempt->timestart, $attempt->timefinish, $attempt->resumestart, $attempt->resumefinish);
     }
 
     /**
