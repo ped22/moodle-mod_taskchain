@@ -640,9 +640,59 @@ class taskchain_form_helper_tasks extends taskchain_form_helper_records {
      * @param object $data the recently submitted form $data
      */
     protected function fix_action_deletetasks(&$data) {
+        global $DB;
         $ids = $this->get_selected_records($data, false);
         if (count($ids)) {
+            // Tasks with scores affect the grades of chain attempts.
+            $select = 'taskid IN (' . implode(',', array_map('intval', $ids)) . ')';
+            $regrade = $DB->record_exists_select('taskchain_task_scores', $select);
             $this->delete_records($ids);
+            if ($regrade) {
+                $this->TC->regrade_chain_after_task_changes($this->TC->get_chainid());
+            }
         }
+    }
+
+    /**
+     * fix_action_applydefaults
+     *
+     * After the default values have been applied, regrade the chains
+     * of tasks whose score settings or weighting were changed.
+     *
+     * @param object $data the recently submitted form $data
+     */
+    protected function fix_action_applydefaults(&$data) {
+        global $DB;
+
+        $this->changedfields = array();
+        parent::fix_action_applydefaults($data);
+        if (empty($this->changedfields)) {
+            return;
+        }
+
+        // The fields that affect task scores (rescore) and chain grades (regrade).
+        $rescorefields = array('scoremethod', 'scoreignore', 'scorelimit', 'attemptlimit', 'allowresume');
+        $regradefields = array('scoreweighting');
+
+        // For each chain id, the ids of the tasks in that chain whose scores must be recalculated.
+        $chains = array();
+        $tasks = $DB->get_records_list('taskchain_tasks', 'id', array_keys($this->changedfields), '', 'id,chainid');
+        foreach ($this->changedfields as $taskid => $fields) {
+            if (empty($tasks[$taskid])) {
+                continue;
+            }
+            $chainid = $tasks[$taskid]->chainid;
+            foreach (array_keys($fields) as $field) {
+                if (in_array($field, $rescorefields)) {
+                    $chains[$chainid][$taskid] = $taskid;
+                } else if (in_array($field, $regradefields) && ! isset($chains[$chainid])) {
+                    $chains[$chainid] = array();
+                }
+            }
+        }
+        foreach ($chains as $chainid => $rescoretaskids) {
+            $this->TC->regrade_chain_after_task_changes($chainid, $rescoretaskids);
+        }
+        $this->changedfields = array();
     }
 }

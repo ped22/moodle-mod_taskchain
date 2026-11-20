@@ -79,8 +79,13 @@ if ($mform->is_cancelled()) {
 
 switch ($TC->action) {
     case 'deleteconfirmed':
-        // Delete task.
+        // Delete task, and regrade the chain if the task had scores.
+        $regrade = $DB->record_exists('taskchain_task_scores', array('taskid' => $TC->task->id));
+        $chainid = $TC->task->chainid;
         taskchain_delete_tasks($TC->task->id);
+        if ($regrade) {
+            $TC->regrade_chain_after_task_changes($chainid);
+        }
 
         // Unset task objects.
         $TC->task = null;
@@ -163,17 +168,14 @@ switch ($TC->action) {
             $aftertaskid = optional_param('aftertaskid', 0, PARAM_INT);
             taskchain_add_tasks($newdata, $mform, $TC->chain, $aftertaskid);
         } else {
-            if (
-                $TC->task->scoremethod == $newdata->scoremethod && $TC->task->scorelimit == $newdata->scorelimit &&
-                $TC->task->scoreweighting == $newdata->scoreweighting
-            ) {
-                $regrade = false;
-            } else {
-                $regrade = true;
-                $TC->task->scoremethod = $newdata->scoremethod;
-                $TC->task->scorelimit = $newdata->scorelimit;
-                $TC->task->scoreweighting = $newdata->scoreweighting;
+            // Check for changes to the settings that affect task scores (rescore) and chain grades (regrade).
+            $rescore = false;
+            foreach (array('scoremethod', 'scoreignore', 'scorelimit', 'attemptlimit', 'allowresume') as $field) {
+                if (isset($newdata->$field) && $TC->task->$field != $newdata->$field) {
+                    $rescore = true;
+                }
             }
+            $regrade = ($rescore || (isset($newdata->scoreweighting) && $TC->task->scoreweighting != $newdata->scoreweighting));
 
             // Set cache fields.
             $TC->task->title = $newdata->title;
@@ -193,50 +195,10 @@ switch ($TC->action) {
             $TC->task = $DB->get_record('taskchain_tasks', array('id' => $newdata->id));
             $TC->task = new taskchain_task($TC->task, array('TC' => &$TC));
 
-            // Regrade task, if necessary.
+            // Regrade task scores, chain attempts and grades, if necessary.
             if ($regrade) {
-                if (
-                    $taskscores = $DB->get_records(
-                    'taskchain_task_scores',
-                    array('taskid' => $TC->task->id),
-                    '',
-                    'id,cnumber,userid'
-                    )
-                ) {
-                    $userids = array();
-                    foreach ($taskscores as $id => $taskscore) {
-                        // Set task score from task attempts.
-                        $TC->regrade_attempts('task', $TC->task, $taskscore->cnumber, $taskscore->userid);
-                        if (! array_key_exists($taskscore->userid, $userids)) {
-                            $userids[$taskscore->userid] = array();
-                        }
-                        $userids[$taskscore->userid][] = $taskscore->cnumber;
-                    }
-                    unset($taskscores);
-
-                    // Array of tasks whose attempts are to be updated.
-                    $tasks = array($TC->task->id => &$TC->task);
-
-                    // Transfer grade settings to taskchain record
-                    // required by taskchain_update_grades (in taskchain/lib.php)
-                    $TC->taskchain->gradelimit = $TC->chain->gradelimit;
-                    $TC->taskchain->gradeweighting = $TC->chain->gradeweighting;
-
-                    // Update chain grades and attempts.
-                    foreach ($userids as $userid => $cnumbers) {
-                        foreach ($cnumbers as $cnumber) {
-                            // Set chain attempt from task score.
-                            $TC->regrade_chainattempt($TC->chain, $cnumber, $userid, $tasks);
-                        }
-
-                        // Set chain grade from chain attempts.
-                        $TC->regrade_attempts('chain', $TC->chain, 0, $userid);
-
-                        // Update grades in Moodle gradebook.
-                        taskchain_update_grades($TC->taskchain, $userid);
-                    }
-                    unset($userids, $tasks);
-                }
+                $rescoretaskids = ($rescore ? array($TC->task->id) : array());
+                $TC->regrade_chain_after_task_changes($TC->task->chainid, $rescoretaskids);
             }
         }
 

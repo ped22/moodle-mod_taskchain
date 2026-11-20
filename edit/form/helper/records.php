@@ -41,6 +41,9 @@ abstract class taskchain_form_helper_records extends taskchain_form_helper_base 
     /** @var string string suffix to add to the form's CSS class */
     protected $formclasssuffix = 'records';
 
+    /** @var array the fields changed by "Apply selected default values": $changedfields[$id][$field] = true */
+    protected $changedfields = array();
+
     /** the default sortorder increment */
     const SORT_INCREMENT       = 10;
 
@@ -923,7 +926,7 @@ abstract class taskchain_form_helper_records extends taskchain_form_helper_base 
                 if (method_exists($record, 'get_fieldvalue')) {
                     $value = $record->get_fieldvalue($field);
                 } else if (isset($record->$field)) {
-                    $value = $field;
+                    $value = $record->$field;
                 } else {
                     $value = null;
                 }
@@ -937,6 +940,7 @@ abstract class taskchain_form_helper_records extends taskchain_form_helper_base 
                     $record->$field = $defaultvalue;
                     $update_record = true;
                 }
+                $this->changedfields[$id][$field] = true;
             }
             if ($update_record) {
                 // update $DB record immediately (task outside current chain)

@@ -695,6 +695,74 @@ class taskchain_regrade extends taskchain_base {
     }
 
     /**
+     * chain_after_task_changes
+     *
+     * Regrade all the attempts at a chain after a teacher changed its tasks,
+     * e.g. deleted tasks, or changed the score settings or weighting of tasks:
+     * (1) recalculate the task scores of the tasks whose score settings changed,
+     * (2) recalculate every chain attempt from the scores of all the tasks in the chain,
+     * (3) recalculate the chain grade of each user, and
+     * (4) update the grades in the gradebook.
+     *
+     * Called as $TC->regrade_chain_after_task_changes($chainid, $rescoretaskids).
+     *
+     * @uses $DB
+     * @param integer $chainid id of a record in the "taskchain_chains" table
+     * @param array $rescoretaskids ids of tasks whose task scores must be recalculated (optional, default=array())
+     * @return void, but may update grades in the database
+     */
+    public function chain_after_task_changes($chainid, $rescoretaskids = array()) {
+        global $DB;
+
+        if (! $chain = $DB->get_record('taskchain_chains', array('id' => $chainid))) {
+            return;
+        }
+
+        // All the tasks in this chain, with all the fields used for scoring.
+        $tasks = $DB->get_records('taskchain_tasks', array('chainid' => $chain->id));
+
+        // Step 1: task scores.
+        foreach ($rescoretaskids as $taskid) {
+            if (empty($tasks[$taskid])) {
+                continue;
+            }
+            $params = array('taskid' => $taskid);
+            if ($taskscores = $DB->get_records('taskchain_task_scores', $params, '', 'id,cnumber,userid')) {
+                foreach ($taskscores as $taskscore) {
+                    $this->attempts('task', $tasks[$taskid], $taskscore->cnumber, $taskscore->userid);
+                }
+            }
+        }
+
+        // Step 2: chain attempts.
+        $userids = array();
+        $params = array('chainid' => $chain->id);
+        if ($chainattempts = $DB->get_records('taskchain_chain_attempts', $params, '', 'id,cnumber,userid')) {
+            foreach ($chainattempts as $chainattempt) {
+                $this->chainattempt($chain, $chainattempt->cnumber, $chainattempt->userid, $tasks);
+                $userids[$chainattempt->userid] = true;
+            }
+        }
+
+        // Step 3: chain grades.
+        foreach (array_keys($userids) as $userid) {
+            $this->attempts('chain', $chain, 0, $userid);
+        }
+
+        // Step 4: the gradebook.
+        if ($chain->parenttype == self::PARENTTYPE_ACTIVITY) {
+            if ($taskchain = $DB->get_record('taskchain', array('id' => $chain->parentid))) {
+                $taskchain->gradelimit = $chain->gradelimit;
+                $taskchain->gradeweighting = $chain->gradeweighting;
+                if ($cm = get_coursemodule_from_instance('taskchain', $taskchain->id, $taskchain->course)) {
+                    $taskchain->cmidnumber = $cm->idnumber;
+                }
+                taskchain_update_grades($taskchain);
+            }
+        }
+    }
+
+    /**
      * chain
      */
     public function chain() {
