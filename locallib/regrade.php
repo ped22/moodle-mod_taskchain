@@ -332,8 +332,8 @@ class taskchain_regrade extends taskchain_base {
     public function chainattempt($chain = null, $cnumber = null, $userid = null, $tasks = null) {
         // Combine task scores into a single chain attempt score.
 
-        // Note: $tasks contains only the tasks that are to be regraded
-        // i.e. it does NOT contain all the tasks in the chain, so it cannot be relied on to calculate equalweighting.
+        // Note: $tasks may contain only the tasks that are to be regraded, i.e. not all the tasks in the chain,
+        // so it is not used to calculate equalweighting, and the chain's other tasks are added to it below.
         global $DB;
 
         // Maintain a cache of grading/scoring info for each chain.
@@ -381,7 +381,7 @@ class taskchain_regrade extends taskchain_base {
                     'taskchain_tasks',
                     array('chainid' => $chain->id),
                     'sortorder',
-                    'id,scoreweighting'
+                    'id,scoreweighting,attemptlimit,allowresume'
                 );
             }
             if ($chains[$chain->id]->tasks) {
@@ -424,6 +424,16 @@ class taskchain_regrade extends taskchain_base {
 
         if (empty($chains[$chain->id]->tasks)) {
             return; // No tasks in this chain.
+        }
+
+        // The attempt grade is calculated from the scores of ALL the tasks in the chain, so add any task
+        // that the caller did not pass (e.g. after deleting the attempts at some tasks, only those tasks are passed).
+        if (! $use_this_tasks) {
+            foreach ($chains[$chain->id]->tasks as $id => $task) {
+                if (! isset($tasks[$id])) {
+                    $tasks[$id] = $task;
+                }
+            }
         }
 
         $taskids = array_keys($chains[$chain->id]->tasks);
