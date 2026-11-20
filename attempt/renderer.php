@@ -673,7 +673,8 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
      */
     public function get_cache_md5key() {
         global $CFG;
-        return md5($this->TC->task->outputformat . $this->page->theme->name . $CFG->wwwroot);
+        // Include the language, because the page includes strings in the user's language.
+        return md5($this->TC->task->outputformat . $this->page->theme->name . $CFG->wwwroot . current_language());
     }
 
     /**
