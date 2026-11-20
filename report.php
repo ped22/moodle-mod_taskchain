@@ -44,7 +44,15 @@ mod_taskchain::add_to_log(
     $TC->coursemodule->id
 );
 
-$PAGE->set_url($TC->url->report($TC->mode));
+// The page url keeps the ids of the records shown in the report (e.g. the chain attempt),
+// so that links back to this page (e.g. from the language menu) show the same report.
+$params = array('id' => $TC->coursemodule->id);
+foreach (array('chainid', 'chaingradeid', 'chainattemptid', 'taskid', 'taskscoreid', 'taskattemptid') as $name) {
+    if ($value = optional_param($name, 0, PARAM_INT)) {
+        $params[$name] = $value;
+    }
+}
+$PAGE->set_url($TC->url->report($TC->mode, $params));
 $PAGE->set_title($TC->taskchain->name);
 $PAGE->set_heading($TC->course->shortname);
 $PAGE->navbar->add(get_string('report'), $TC->url->report('chaingrades', array('id' => $TC->coursemodule->id)));
