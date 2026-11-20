@@ -264,6 +264,15 @@ class mod_taskchain_report_renderer extends mod_taskchain_renderer {
 
         // Setup sql to COUNT records.
         list($select, $from, $where, $params) = $this->count_sql($userid, $record);
+        if (in_array('fullname', $tablecolumns) && strpos($from, '{user} u') === false) {
+            // The first/last name initials filter adds conditions on the user table ("u"),
+            // which is only joined in the SELECT sql, so count the same rows as that sql.
+            $sql = $this->select_sql($userid, $record);
+            $select = 'COUNT(1)';
+            $from = $sql[1];
+            $where = $sql[2];
+            $params = $sql[3];
+        }
         $table->set_count_sql("SELECT $select FROM $from WHERE $where", $params);
 
         // Setup sql to SELECT records.

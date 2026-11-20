@@ -1114,6 +1114,39 @@ class taskchain_report_table extends table_sql {
     }
 
     /**
+     * get_sql_where: override parent class method, because the report SQL uses positional parameters
+     *
+     * @return array (string $where, array $params)
+     */
+    public function get_sql_where() {
+        // The report SQL uses positional (?) parameters, but the first/last name initials filter
+        // adds named ones (e.g. :ifirstc1), and the two cannot be mixed in one query,
+        // so convert the named parameters to positional ones, in the order they appear.
+        $sql = parent::get_sql_where();
+        $where = $sql[0];
+        $params = $sql[1];
+        if ($where === '' || empty($params)) {
+            return array($where, array());
+        }
+        $positional = array();
+        $parts = preg_split('/:([a-z][a-z0-9_]*)/i', $where, -1, PREG_SPLIT_DELIM_CAPTURE);
+        $where = '';
+        foreach ($parts as $i => $part) {
+            if ($i % 2 == 0) {
+                $where .= $part; // SQL text.
+            } else if (array_key_exists($part, $params)) {
+                $where .= '?';
+                $positional[] = $params[$part];
+            } else {
+                $where .= ':' . $part; // Not one of the parameters.
+            }
+        }
+        // The names are in the user table, which the report SQL calls "u".
+        $where = preg_replace('/(?<![.\w])(firstname|lastname)\b/', 'u.$1', $where);
+        return array($where, $positional);
+    }
+
+    /**
      * override parent class method, because we may want to specify a default sort
      *
      * @return xxx
