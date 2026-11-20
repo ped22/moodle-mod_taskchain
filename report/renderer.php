@@ -539,7 +539,7 @@ class mod_taskchain_report_renderer extends mod_taskchain_renderer {
      * @param string $fieldprefix prefix to add to all columns in their aliases, does not apply to 'id'
      * @return string
      */
-    public function get_userfields($tableprefix = '', array $extrafields = null, $idalias = 'id', $fieldprefix = '') {
+    public function get_userfields($tableprefix = '', $extrafields = null, $idalias = 'id', $fieldprefix = '') {
 
         // Ensure $tableprefix is a string.
         if ($tableprefix === null) {

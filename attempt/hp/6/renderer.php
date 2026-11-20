@@ -4014,7 +4014,7 @@ class mod_taskchain_attempt_hp_6_renderer extends mod_taskchain_attempt_hp_rende
     public function seed_random_number_generator() {
         static $seeded = false;
         if (! $seeded) {
-            srand((int) ((double) microtime() * 1000000));
+            srand((int) ((float) microtime() * 1000000));
             $seeded = true;
         }
     }
