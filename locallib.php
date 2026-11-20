@@ -2091,10 +2091,10 @@ class mod_taskchain extends taskchain_base {
                 $sql = "
                     SELECT id, sortorder FROM {taskchain_tasks} q
                     LEFT JOIN (
-                        # ids of tasks attempted by this user (in this chain attempt)
+                        -- ids of tasks attempted by this user (in this chain attempt)
                         SELECT DISTINCT taskid FROM {taskchain_task_attempts}
                         WHERE taskid IN (
-                            # tasks in this chain
+                            -- tasks in this chain
                             SELECT id FROM {taskchain_tasks} WHERE chainid=$chainid
                         ) AND cnumber=$cnumber AND userid=$userid
                     ) a ON q.id=a.taskid
@@ -2108,16 +2108,16 @@ class mod_taskchain extends taskchain_base {
                 $sql = "
                     SELECT id, sortorder FROM {taskchain_tasks} q
                     LEFT JOIN (
-                        # tasks with attempts that have responses
+                        -- tasks with attempts that have responses
                         SELECT DISTINCT taskid FROM {taskchain_task_attempts}
                         WHERE id IN (
-                            # attempts that have responses
+                            -- attempts that have responses
                             SELECT DISTINCT attemptid FROM {taskchain_responses}
                             WHERE attemptid IN (
-                                # attempts (on tasks in this chain)
+                                -- attempts (on tasks in this chain)
                                 SELECT id FROM {taskchain_task_attempts}
                                 WHERE taskid IN (
-                                    # tasks in this chain
+                                    -- tasks in this chain
                                     SELECT id FROM {taskchain_tasks} WHERE chainid=$chainid
                                 ) AND cnumber=$cnumber AND userid=$userid
                             )
@@ -2135,7 +2135,7 @@ class mod_taskchain extends taskchain_base {
                     LEFT JOIN (
                         SELECT DISTINCT taskid FROM {taskchain_task_scores}
                         WHERE taskid IN (
-                            # tasks in this chain
+                            -- tasks in this chain
                             SELECT id FROM {taskchain_tasks} WHERE chainid=$chainid
                         ) AND score=100 AND cnumber=$cnumber AND userid=$userid
                     ) qs ON q.id=qs.taskid
