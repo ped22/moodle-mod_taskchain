@@ -765,16 +765,8 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
             }
         }
 
-        if ($this->TC->task->useglossary) {
-            $select = 'course = ? AND module = ? AND action IN (?, ?, ?, ?) AND time > ?';
-            $params = array(
-                $this->TC->course->id, 'glossary',
-                'add entry', 'approve entry', 'update entry', 'delete entry',
-                $this->cache->timemodified,
-            );
-            if ($DB->record_exists_select('log', $select, $params)) {
-                return false; // Glossary entries (for this course) have been modified.
-            }
+        if ($this->TC->task->useglossary && $this->glossary_modified($this->cache->timemodified)) {
+            return false; // Glossary entries (for this course) have been modified.
         }
 
         // if we get this far then the cache content is uptodate
@@ -786,6 +778,44 @@ class mod_taskchain_attempt_renderer extends mod_taskchain_renderer {
         }
         $this->cache_uptodate = true;
         return $this->cache_uptodate;
+    }
+
+    /**
+     * glossary_modified
+     *
+     * Have the glossary entries that the Glossary auto-linking filter may use on this task's page
+     * (the course's glossaries and the global glossaries) changed since the given time?
+     *
+     * @param integer $time
+     * @return boolean
+     */
+    protected function glossary_modified($time) {
+        global $DB;
+
+        // Entries added, updated or approved (deleted entries are found in the log below).
+        $sql = 'SELECT 1' .
+               ' FROM {glossary_entries} e JOIN {glossary} g ON g.id = e.glossaryid' .
+               ' WHERE (g.course = ? OR g.globalglossary = 1) AND e.timemodified > ?';
+        if ($DB->record_exists_sql($sql, array($this->TC->course->id, $time))) {
+            return true;
+        }
+
+        // Entries deleted, approved or disapproved (in the standard log, if it is enabled).
+        $stores = explode(',', (string)get_config('tool_log', 'enabled_stores'));
+        if (in_array('logstore_standard', $stores)) {
+            $events = array('entry_deleted', 'entry_approved', 'entry_disapproved');
+            foreach ($events as $i => $event) {
+                $events[$i] = '\\mod_glossary\\event\\' . $event;
+            }
+            $in = $DB->get_in_or_equal($events);
+            $select = 'courseid = ? AND timecreated > ? AND eventname ' . $in[0];
+            $params = array_merge(array($this->TC->course->id, $time), $in[1]);
+            if ($DB->record_exists_select('logstore_standard_log', $select, $params)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
